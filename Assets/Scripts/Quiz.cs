@@ -4,12 +4,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 public class Quiz : MonoBehaviour
 {
     [Header("Questions")]
-    [SerializeField] private QuestionsSO question;
+    private QuestionsSO currentQuestion;
     [SerializeField] private TextMeshProUGUI questionText;
+    [SerializeField] private List<QuestionsSO> questions = new List<QuestionsSO>();
     
     [Header("Answers")]
     [SerializeField] private GameObject[] answerButtons;
@@ -26,7 +28,6 @@ public class Quiz : MonoBehaviour
     void Start()
     {
         timer = FindObjectOfType<Timer>();
-        GetNextQuestion();
     }
 
     private void Update()
@@ -47,22 +48,35 @@ public class Quiz : MonoBehaviour
 
     private void DisplayQuestion()
     {
-        questionText.text = question.GetQuestion();
+        questionText.text = currentQuestion.GetQuestion();
 
         for (int i = 0; i < answerButtons.Length; i++)
         {
             TextMeshProUGUI buttonText = answerButtons[i].GetComponentInChildren<TextMeshProUGUI>();
-            buttonText.text = question.GetAnswer(i);
+            buttonText.text = currentQuestion.GetAnswer(i);
         }
     }
 
     void GetNextQuestion()
     {
-        SetButtonState(true);
-        SetDefaultButtonSprites();
-        DisplayQuestion();
+        if (questions.Count > 0)
+        {
+            SetButtonState(true);
+            SetDefaultButtonSprites();
+            GetRandomQuestion();
+            DisplayQuestion();
+        }
     }
-    
+
+    private void GetRandomQuestion()
+    {
+        int index = Random.Range(0, questions.Count);
+        currentQuestion = questions[index];
+        
+        if(questions.Contains(currentQuestion))
+            questions.Remove(currentQuestion);
+    }
+
 
     public void OnAnswerSelected(int index)
     {
@@ -70,12 +84,12 @@ public class Quiz : MonoBehaviour
         DisplayAnswer(index);
         SetButtonState(false);
         timer.CancelTimer();
-    }
+    } 
 
     private void DisplayAnswer(int index)
     {
         Image buttonImage;
-        if (index == question.GetCorrectAnswerIndex())
+        if (index == currentQuestion.GetCorrectAnswerIndex())
         {
             questionText.text = "Correct!";
             buttonImage = answerButtons[index].GetComponent<Image>();
@@ -83,8 +97,8 @@ public class Quiz : MonoBehaviour
         }
         else
         {
-            questionText.text = "Sorry, the correct answer was:\n" + question.GetAnswer(question.GetCorrectAnswerIndex());
-            buttonImage = answerButtons[question.GetCorrectAnswerIndex()].GetComponent<Image>();
+            questionText.text = "Sorry, the correct answer was:\n" + currentQuestion.GetAnswer(currentQuestion.GetCorrectAnswerIndex());
+            buttonImage = answerButtons[currentQuestion.GetCorrectAnswerIndex()].GetComponent<Image>();
             buttonImage.sprite = correctAnswerSprite;
         }
     }
